@@ -1,170 +1,252 @@
-# End-to-End Testing Guide
+# Local Testing Guide
 
-This guide explains how to test Digital You end-to-end, covering both automated
-tests (with mocked services) and manual testing with real credentials.
+How to test Digital You end-to-end on your local machine, entirely from your
+terminal.
 
 ---
 
-## Quick Start: Automated E2E Tests
+## Prerequisites
 
-Run all tests, including the end-to-end suite, with a single command:
+- Python 3.11+
+- An [OpenAI API key](https://platform.openai.com/api-keys)
+- A Google Cloud project with the Gmail API enabled and OAuth 2.0 credentials
+  (see [README → Google Cloud Setup](README.md#3-google-cloud-setup))
+
+---
+
+## 1. Install & Configure
 
 ```bash
+# Clone (skip if you already have it)
+git clone https://github.com/Yang-YZ/digital-you.git
+cd digital-you
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
-# Run all tests
-pytest tests/ -v
-
-# Run only E2E tests
-pytest tests/test_e2e.py -v
-```
-
-No API keys or credentials are needed — external services (Gmail API, OpenAI)
-are fully mocked.
-
----
-
-## What the E2E Tests Cover
-
-| Test Class | What It Tests |
-|---|---|
-| `TestEndToEndUserFlow` | Complete journey: login → OAuth callback → build profile → get profile → chat → email reply |
-| `TestEndToEndProfileBuild` | Profile building with mocked emails, and the "no emails" edge case |
-| `TestEndToEndChat` | Multi-turn chat conversations with conversation history |
-| `TestEndToEndEmailReply` | Email reply generation with required and optional fields |
-| `TestEndToEndProfileBuilderIntegration` | `build_profile()` function with mocked OpenAI API |
-| `TestEndToEndResponderIntegration` | `generate_chat_response()` and `generate_email_reply()` with mocked OpenAI API |
-| `TestEndToEndEdgeCases` | Invalid sessions, frontend loading, health check |
-
----
-
-## Manual E2E Testing with Real Credentials
-
-To test with real Gmail and OpenAI integration:
-
-### Prerequisites
-
-1. **OpenAI API key** — Get one at <https://platform.openai.com/api-keys>
-2. **Google Cloud project** with the Gmail API enabled and OAuth 2.0 credentials
-
-### Step 1: Configure Environment
-
-```bash
+# Set up environment variables
 cp .env.example .env
+# Now edit .env with your real keys:
+#   OPENAI_API_KEY=sk-...
+#   GOOGLE_CLIENT_ID=...
+#   GOOGLE_CLIENT_SECRET=...
+#   APP_SECRET_KEY=some-random-string
 ```
 
-Edit `.env` with your real credentials:
+---
 
-```env
-OPENAI_API_KEY=sk-...your-real-key...
-GOOGLE_CLIENT_ID=...your-client-id...
-GOOGLE_CLIENT_SECRET=...your-client-secret...
-APP_SECRET_KEY=any-random-string
-```
-
-### Step 2: Google Cloud Setup
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project (or use an existing one)
-3. Enable the **Gmail API**
-4. Go to **APIs & Services → Credentials**
-5. Create an **OAuth 2.0 Client ID** (type: Web application)
-6. Add `http://localhost:8000/auth/callback` as an **Authorized redirect URI**
-7. Copy the Client ID and Client Secret to your `.env`
-
-### Step 3: Start the Server
+## 2. Start the Server
 
 ```bash
 python -m backend.main
 ```
 
-The server starts at <http://localhost:8000>.
+You should see output like:
 
-### Step 4: Walk Through the Flow
-
-1. **Open** <http://localhost:8000> in your browser
-2. **Click** "Connect Gmail Account" — you'll be redirected to Google
-3. **Sign in** and grant read-only Gmail access
-4. **Click** "Build / Rebuild Profile" — the app fetches your emails and extracts your personality
-5. **Review** the personality profile dashboard (traits, hobbies, interests, etc.)
-6. **Chat tab** — type messages and see responses in your style
-7. **Email Reply tab** — paste an email you received and generate a reply
-
-### What to Verify
-
-- [ ] OAuth login redirects to Google and returns successfully
-- [ ] Profile shows realistic personality traits extracted from your emails
-- [ ] Chat responses match your communication style
-- [ ] Email replies are written in your tone and reference your interests naturally
-- [ ] Error states work correctly (e.g., chatting before building a profile)
-
----
-
-## Test Architecture
-
-### Mocking Strategy
-
-The E2E tests mock external services at two levels:
-
-**API route level** (in `test_e2e.py`):
-- `backend.main.fetch_emails` — returns pre-built `EmailMessage` objects
-- `backend.main.build_profile` — returns a pre-built `UserProfile`
-- `backend.main.generate_chat_response` — returns canned chat responses
-- `backend.main.generate_email_reply` — returns canned email replies
-- `backend.main.get_authorization_url` — returns a fake Google auth URL
-- `backend.main.exchange_code_for_credentials` — returns fake credentials
-- `backend.main.get_user_email` — returns a fake email address
-
-**Module level** (in integration tests):
-- `backend.profile_builder.builder.OpenAI` — mock OpenAI client for profile extraction
-- `backend.llm.responder.OpenAI` — mock OpenAI client for response generation
-
-### Shared Fixtures (`tests/conftest.py`)
-
-| Fixture | Description |
-|---|---|
-| `client` | FastAPI `TestClient` for making HTTP requests |
-| `sample_profile` | A pre-built `UserProfile` with realistic data |
-| `sample_emails` | A list of 5 sample `EmailMessage` objects |
-| `authenticated_session` | A session with credentials and a built profile |
-| `unauthenticated_session` | A session with credentials but no profile |
-| `make_mock_openai_response()` | Helper to create mock OpenAI API responses |
-
----
-
-## Adding New E2E Tests
-
-Follow this pattern:
-
-```python
-class TestMyFeature:
-    def test_my_scenario(self, client, authenticated_session, monkeypatch):
-        # Mock any external calls
-        monkeypatch.setattr(
-            "backend.main.generate_chat_response",
-            lambda profile, message, conversation_history: "Mocked response",
-        )
-
-        # Make the API call
-        resp = client.post(
-            f"/chat?session_id={authenticated_session}",
-            json={"message": "Hello!"},
-        )
-
-        # Assert the result
-        assert resp.status_code == 200
-        assert resp.json()["response"] == "Mocked response"
 ```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [12345] using StatReload
+```
+
+Leave this running. Open a **second terminal** (activate the same venv) for the
+steps below.
+
+---
+
+## 3. Verify the Server Is Running
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
+---
+
+## 4. Test the Auth Flow (Login)
+
+```bash
+curl http://localhost:8000/auth/login
+```
+
+Expected response (a Google OAuth URL):
+
+```json
+{"auth_url":"https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=...&redirect_uri=...&scope=...&state=SOME_STATE&access_type=offline&include_granted_scopes=true&prompt=consent"}
+```
+
+**Next — complete the OAuth flow:**
+
+1. Copy the `auth_url` value and open it in your browser.
+2. Sign in with your Google account and grant access.
+3. Google redirects you to `http://localhost:8000/auth/callback?code=...&state=...`.
+4. The browser page shows JSON with your `session_id` and `email`. **Copy the
+   `session_id`** — you'll need it for every subsequent request.
+
+> **Tip:** If the redirect page shows JSON directly, just grab `session_id`
+> from it. If the frontend handles the redirect, check the URL bar or
+> `localStorage` in the browser console for `session_id`.
+
+Save it in your terminal for convenience:
+
+```bash
+export SESSION_ID="<paste-your-session-id-here>"
+```
+
+---
+
+## 5. Build Your Profile
+
+This fetches your recent emails and uses OpenAI to extract a personality
+profile:
+
+```bash
+curl -X POST "http://localhost:8000/profile/build?session_id=$SESSION_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"max_emails": 50}'
+```
+
+Expected response (truncated):
+
+```json
+{
+  "profile": {
+    "email": "you@gmail.com",
+    "name": "Your Name",
+    "personality_traits": ["curious", "friendly", ...],
+    "hobbies": ["reading", "cooking", ...],
+    "interests": ["technology", "travel", ...],
+    "communication_style": "casual and warm",
+    "frequently_discussed_topics": ["work", "travel", ...],
+    "purchase_categories": ["books", "electronics", ...],
+    "writing_tone": "friendly and informal",
+    "summary": "A curious tech enthusiast who ..."
+  },
+  "email_count": 50
+}
+```
+
+> **Note:** Use a smaller `max_emails` value (e.g. `10`) for faster testing.
+> The default limit is 500.
+
+---
+
+## 6. Retrieve Your Profile
+
+```bash
+curl "http://localhost:8000/profile?session_id=$SESSION_ID"
+```
+
+Returns the same profile you built in the previous step.
+
+---
+
+## 7. Chat with Your Digital Twin
+
+```bash
+curl -X POST "http://localhost:8000/chat?session_id=$SESSION_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What do you like to do on weekends?"}'
+```
+
+Expected response:
+
+```json
+{"response":"Hey! I usually love to..."}
+```
+
+### Multi-turn conversation
+
+Pass `conversation_history` to continue the conversation:
+
+```bash
+curl -X POST "http://localhost:8000/chat?session_id=$SESSION_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Any book recommendations?",
+    "conversation_history": [
+      {"role": "user", "content": "What do you like to do on weekends?"},
+      {"role": "assistant", "content": "Hey! I usually love to read or go hiking..."}
+    ]
+  }'
+```
+
+---
+
+## 8. Generate an Email Reply
+
+```bash
+curl -X POST "http://localhost:8000/email/reply?session_id=$SESSION_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "original_email_subject": "Team dinner this Friday?",
+    "original_email_body": "Hi everyone, want to grab dinner this Friday at 7pm?",
+    "sender_name": "Sarah",
+    "additional_context": "I am free after 6pm"
+  }'
+```
+
+Expected response:
+
+```json
+{"reply":"Hi Sarah,\n\nThat sounds great! I'm free after 6 so Friday at 7 works perfectly..."}
+```
+
+`sender_name` and `additional_context` are optional — only `original_email_subject`
+and `original_email_body` are required.
+
+---
+
+## 9. Test the Frontend (Browser)
+
+Open <http://localhost:8000> in your browser to use the full UI:
+
+1. Click **"Connect Gmail Account"** → signs in with Google
+2. Click **"Build / Rebuild Profile"** → analyzes your emails
+3. **Chat tab** → talk to your digital twin
+4. **Email Reply tab** → paste an email and generate a reply
+
+---
+
+## 10. Run the Unit Tests
+
+Unit tests don't require any API keys — they test internal logic only:
+
+```bash
+pytest tests/ -v
+```
+
+---
+
+## Quick Reference
+
+| Endpoint               | Method | What it does                        | Needs session? |
+|------------------------|--------|-------------------------------------|----------------|
+| `/health`              | GET    | Health check                        | No             |
+| `/auth/login`          | GET    | Get Google OAuth URL                | No             |
+| `/auth/callback`       | GET    | Handle OAuth callback (automatic)   | No             |
+| `/profile/build`       | POST   | Fetch emails & build profile        | Yes            |
+| `/profile`             | GET    | Get current profile                 | Yes            |
+| `/chat`                | POST   | Chat with your digital twin         | Yes            |
+| `/email/reply`         | POST   | Generate an email reply             | Yes            |
 
 ---
 
 ## Troubleshooting
 
-| Issue | Solution |
+| Problem | Fix |
 |---|---|
-| `ModuleNotFoundError: No module named 'backend'` | Run tests from the project root: `cd digital-you && pytest tests/ -v` |
-| OAuth redirect fails locally | Ensure `http://localhost:8000/auth/callback` is in your Google Cloud authorized redirect URIs |
-| "Profile not built yet" error | Build the profile first before chatting or generating replies |
-| OpenAI API errors | Check that your `OPENAI_API_KEY` is valid and has credits |
-| Tests fail with import errors | Run `pip install -r requirements.txt` to install dependencies |
+| `connection refused` on curl | Make sure the server is running (`python -m backend.main`) |
+| `{"detail":"Not authenticated"}` | Your session expired or `SESSION_ID` is wrong — redo step 4 |
+| `{"detail":"Profile not built yet"}` | Run step 5 first to build your profile |
+| OAuth redirect fails | Ensure `http://localhost:8000/auth/callback` is in your Google Cloud authorized redirect URIs |
+| OpenAI errors / empty responses | Check that `OPENAI_API_KEY` in `.env` is valid and has credits |
+| `ModuleNotFoundError` | Make sure you activated the venv and ran `pip install -r requirements.txt` |

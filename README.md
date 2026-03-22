@@ -107,18 +107,18 @@ python -m backend.main
 
 Open [http://localhost:8000](http://localhost:8000) in your browser.
 
-## Running Tests
+## Testing
+
+### Unit Tests
 
 ```bash
-# Run all tests (unit + end-to-end)
 pytest tests/ -v
-
-# Run only end-to-end tests
-pytest tests/test_e2e.py -v
 ```
 
-For the full end-to-end testing guide (including manual testing with real
-credentials), see [E2E_TESTING.md](E2E_TESTING.md).
+### Local End-to-End Testing
+
+See [E2E_TESTING.md](E2E_TESTING.md) for a step-by-step guide to testing the
+full application locally using `curl` and your browser.
 
 ## API Endpoints
 
