@@ -206,6 +206,8 @@ function copyReply() {
     const text = document.getElementById("email-reply-text").textContent;
     navigator.clipboard.writeText(text).then(() => {
         alert("Reply copied to clipboard!");
+    }).catch(() => {
+        alert("Failed to copy. Please select and copy the text manually.");
     });
 }
 
@@ -245,11 +247,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     const handled = await handleCallback();
     if (handled) return;
 
-    // Check for existing session
+    // Check for existing session and validate it
     const savedSession = localStorage.getItem("session_id");
     const savedEmail = localStorage.getItem("user_email");
     if (savedSession && savedEmail) {
-        sessionId = savedSession;
-        showLoggedInState(savedEmail);
+        try {
+            const res = await fetch(`${API_BASE}/profile?session_id=${encodeURIComponent(savedSession)}`);
+            if (res.status === 401) {
+                // Session expired — clear stored data
+                localStorage.removeItem("session_id");
+                localStorage.removeItem("user_email");
+            } else {
+                sessionId = savedSession;
+                showLoggedInState(savedEmail);
+            }
+        } catch {
+            // Server unreachable — still show logged-in state optimistically
+            sessionId = savedSession;
+            showLoggedInState(savedEmail);
+        }
     }
 });

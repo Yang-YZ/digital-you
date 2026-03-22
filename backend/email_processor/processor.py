@@ -80,7 +80,7 @@ def fetch_emails(
     for query in ["in:inbox", "in:sent"]:
         page_token = None
         fetched = 0
-        per_query_limit = max_results // 2
+        per_query_limit = (max_results + 1) // 2
 
         while fetched < per_query_limit:
             batch_size = min(100, per_query_limit - fetched)
