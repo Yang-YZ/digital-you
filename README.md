@@ -110,8 +110,15 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 ## Running Tests
 
 ```bash
+# Run all tests (unit + end-to-end)
 pytest tests/ -v
+
+# Run only end-to-end tests
+pytest tests/test_e2e.py -v
 ```
+
+For the full end-to-end testing guide (including manual testing with real
+credentials), see [E2E_TESTING.md](E2E_TESTING.md).
 
 ## API Endpoints
 
