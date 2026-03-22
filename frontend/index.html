@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital You — AI Representative</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <h1>🤖 Digital You</h1>
+            <p class="subtitle">Your AI-powered email personality twin</p>
+        </header>
+
+        <!-- Login Section -->
+        <section id="login-section" class="card">
+            <h2>Get Started</h2>
+            <p>Connect your Gmail account to build an AI that thinks, writes, and responds like you.</p>
+            <button id="login-btn" class="btn btn-primary" onclick="startLogin()">
+                📧 Connect Gmail Account
+            </button>
+        </section>
+
+        <!-- Profile Section (hidden initially) -->
+        <section id="profile-section" class="card hidden">
+            <div class="section-header">
+                <h2>Your Personality Profile</h2>
+                <button id="build-btn" class="btn btn-secondary" onclick="buildProfile()">
+                    🔄 Build / Rebuild Profile
+                </button>
+            </div>
+            <div id="profile-loading" class="hidden">
+                <div class="spinner"></div>
+                <p>Analyzing your emails… This may take a minute.</p>
+            </div>
+            <div id="profile-content" class="hidden">
+                <div class="profile-grid">
+                    <div class="profile-card">
+                        <h3>👤 Summary</h3>
+                        <p id="profile-summary"></p>
+                    </div>
+                    <div class="profile-card">
+                        <h3>🎯 Personality Traits</h3>
+                        <div id="profile-traits" class="tag-list"></div>
+                    </div>
+                    <div class="profile-card">
+                        <h3>🎨 Hobbies</h3>
+                        <div id="profile-hobbies" class="tag-list"></div>
+                    </div>
+                    <div class="profile-card">
+                        <h3>💡 Interests</h3>
+                        <div id="profile-interests" class="tag-list"></div>
+                    </div>
+                    <div class="profile-card">
+                        <h3>🛍️ Purchase Categories</h3>
+                        <div id="profile-purchases" class="tag-list"></div>
+                    </div>
+                    <div class="profile-card">
+                        <h3>💬 Communication Style</h3>
+                        <p id="profile-style"></p>
+                    </div>
+                    <div class="profile-card">
+                        <h3>✍️ Writing Tone</h3>
+                        <p id="profile-tone"></p>
+                    </div>
+                    <div class="profile-card">
+                        <h3>📌 Frequent Topics</h3>
+                        <div id="profile-topics" class="tag-list"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabs for Chat and Email Reply -->
+        <section id="interaction-section" class="card hidden">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('chat')">💬 Chat</button>
+                <button class="tab" onclick="switchTab('email')">📧 Email Reply</button>
+            </div>
+
+            <!-- Chat Tab -->
+            <div id="chat-tab" class="tab-content active">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="message assistant">
+                        <p>Hi! I'm the digital version of you. Ask me anything or have a conversation — I'll respond just like you would!</p>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()">
+                    <button class="btn btn-primary" onclick="sendChat()">Send</button>
+                </div>
+            </div>
+
+            <!-- Email Reply Tab -->
+            <div id="email-tab" class="tab-content">
+                <div class="email-form">
+                    <label for="email-sender">From (sender name):</label>
+                    <input type="text" id="email-sender" placeholder="e.g., John Smith">
+
+                    <label for="email-subject">Subject:</label>
+                    <input type="text" id="email-subject" placeholder="e.g., Meeting Tomorrow">
+
+                    <label for="email-body">Original Email Body:</label>
+                    <textarea id="email-body" rows="6" placeholder="Paste the email you want to reply to…"></textarea>
+
+                    <label for="email-context">Additional Context (optional):</label>
+                    <input type="text" id="email-context" placeholder="e.g., I'm available after 3pm">
+
+                    <button class="btn btn-primary" onclick="generateReply()">✉️ Generate Reply</button>
+                </div>
+                <div id="email-reply-result" class="hidden">
+                    <h3>Generated Reply:</h3>
+                    <div id="email-reply-text" class="reply-box"></div>
+                    <button class="btn btn-secondary" onclick="copyReply()">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
