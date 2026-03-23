@@ -247,6 +247,6 @@ pytest tests/ -v
 | `connection refused` on curl | Make sure the server is running (`python -m backend.main`) |
 | `{"detail":"Not authenticated"}` | Your session expired or `SESSION_ID` is wrong — redo step 4 |
 | `{"detail":"Profile not built yet"}` | Run step 5 first to build your profile |
-| OAuth redirect fails | Ensure `http://localhost:8000/auth/callback` is in your Google Cloud authorized redirect URIs |
+| OAuth redirect fails | Ensure `http://localhost:8000` is in your Google Cloud authorized redirect URIs |
 | OpenAI errors / empty responses | Check that `OPENAI_API_KEY` in `.env` is valid and has credits |
 | `ModuleNotFoundError` | Make sure you activated the venv and ran `pip install -r requirements.txt` |
