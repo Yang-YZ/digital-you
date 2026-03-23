@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+try:
+    from fastapi import FastAPI, HTTPException, Request
+except ModuleNotFoundError:
+    sys.exit(
+        "Error: required packages are not installed.\n"
+        "Run this first:\n\n"
+        "  pip install -r requirements.txt\n"
+    )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
