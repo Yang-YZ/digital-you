@@ -55,11 +55,27 @@ class TestAuthentication:
             "backend.main.get_authorization_url",
             lambda: ("https://accounts.google.com/o/oauth2/auth?test=1", "test-state"),
         )
+        monkeypatch.setattr("backend.main.GOOGLE_CLIENT_ID", "fake-id")
+        monkeypatch.setattr("backend.main.GOOGLE_CLIENT_SECRET", "fake-secret")
         response = client.get("/auth/login")
         assert response.status_code == 200
         data = response.json()
         assert "auth_url" in data
         assert "accounts.google.com" in data["auth_url"]
+
+    def test_login_fails_without_client_id(self, client, monkeypatch):
+        monkeypatch.setattr("backend.main.GOOGLE_CLIENT_ID", "")
+        monkeypatch.setattr("backend.main.GOOGLE_CLIENT_SECRET", "fake-secret")
+        response = client.get("/auth/login")
+        assert response.status_code == 500
+        assert "GOOGLE_CLIENT_ID" in response.json()["detail"]
+
+    def test_login_fails_without_client_secret(self, client, monkeypatch):
+        monkeypatch.setattr("backend.main.GOOGLE_CLIENT_ID", "fake-id")
+        monkeypatch.setattr("backend.main.GOOGLE_CLIENT_SECRET", "")
+        response = client.get("/auth/login")
+        assert response.status_code == 500
+        assert "GOOGLE_CLIENT_SECRET" in response.json()["detail"]
 
 
 class TestProfile:

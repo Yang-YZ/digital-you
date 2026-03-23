@@ -29,7 +29,12 @@ from backend.auth.gmail_auth import (
     exchange_code_for_credentials,
     get_authorization_url,
 )
-from backend.config import FRONTEND_URL, MAX_EMAILS_TO_FETCH
+from backend.config import (
+    FRONTEND_URL,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
+    MAX_EMAILS_TO_FETCH,
+)
 from backend.email_processor.processor import (
     categorize_emails,
     fetch_emails,
@@ -129,6 +134,15 @@ async def serve_frontend() -> HTMLResponse:
 @app.get("/auth/login", response_model=AuthURL)
 async def auth_login() -> AuthURL:
     """Start the OAuth2 login flow. Returns the Google authorization URL."""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Google OAuth credentials are not configured. "
+                "Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET "
+                "in your .env file. See .env.example for details."
+            ),
+        )
     auth_url, state = get_authorization_url()
     # Store state for later verification
     _sessions[state] = {"state": state}
