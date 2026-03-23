@@ -119,7 +119,7 @@ async def serve_frontend() -> HTMLResponse:
     index_path = _frontend_dir / "index.html"
     if not index_path.exists():
         return HTMLResponse("<h1>Frontend not found</h1>", status_code=404)
-    return HTMLResponse(index_path.read_text())
+    return HTMLResponse(index_path.read_text(encoding="utf-8"))
 
 
 # ---------------------------------------------------------------------------

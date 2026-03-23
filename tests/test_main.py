@@ -124,3 +124,10 @@ class TestFrontend:
         response = client.get("/")
         assert response.status_code == 200
         assert "Digital You" in response.text
+
+    def test_serves_frontend_with_utf8_emojis(self, client):
+        """Ensure the HTML is read as UTF-8 so emoji chars don't break on Windows."""
+        response = client.get("/")
+        assert response.status_code == 200
+        # The index.html contains emoji characters that would fail under cp1252
+        assert "🤖" in response.text
