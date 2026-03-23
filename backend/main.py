@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -43,10 +46,29 @@ from backend.models.schemas import (
 )
 from backend.profile_builder.builder import build_profile
 
+_logger = logging.getLogger("digital_you")
+
+
+@asynccontextmanager
+async def _lifespan(application: FastAPI) -> AsyncIterator[None]:
+    """Print a helpful message so users know what to do after the server starts."""
+    host = os.getenv("APP_HOST", "127.0.0.1")
+    port = os.getenv("APP_PORT", "8000")
+    _logger.info(
+        "\n"
+        "  ✨ Digital You is running!\n"
+        "  Open http://%s:%s in your browser to get started.\n"
+        "  API docs available at http://%s:%s/docs\n",
+        host, port, host, port,
+    )
+    yield
+
+
 app = FastAPI(
     title="Digital You",
     description="Build an AI representative from your email history",
     version="1.0.0",
+    lifespan=_lifespan,
 )
 
 app.add_middleware(
