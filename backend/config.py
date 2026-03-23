@@ -21,4 +21,6 @@ GOOGLE_SCOPES: list[str] = [
     "openid",
 ]
 
-GOOGLE_REDIRECT_URI: str = os.getenv("GOOGLE_REDIRECT_URI", FRONTEND_URL)
+GOOGLE_REDIRECT_URI: str = os.getenv(
+    "GOOGLE_REDIRECT_URI", f"{FRONTEND_URL}/auth/callback"
+)

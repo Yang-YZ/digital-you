@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import sys
+import urllib.parse
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -20,7 +21,7 @@ except ModuleNotFoundError:
         "  pip install -r requirements.txt\n"
     )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.auth.gmail_auth import (
@@ -150,23 +151,33 @@ async def auth_login() -> AuthURL:
 
 
 @app.get("/auth/callback")
-async def auth_callback(code: str, state: str) -> dict[str, str]:
+async def auth_callback(code: str, state: str) -> RedirectResponse:
     """Handle the OAuth2 callback from Google.
 
-    Exchanges the authorization code for credentials and creates a session.
+    Exchanges the authorization code for credentials, creates a session,
+    and redirects the browser to the frontend with the session info.
     """
-    credentials = exchange_code_for_credentials(code)
-    creds_dict = credentials_to_dict(credentials)
-    user_email = get_user_email(credentials)
+    try:
+        credentials = exchange_code_for_credentials(code)
+        creds_dict = credentials_to_dict(credentials)
+        user_email = get_user_email(credentials)
 
-    session_id = state  # Use the OAuth state as session ID
-    _sessions[session_id] = {
-        "credentials": creds_dict,
-        "email": user_email,
-        "profile": None,
-    }
+        session_id = state  # Use the OAuth state as session ID
+        _sessions[session_id] = {
+            "credentials": creds_dict,
+            "email": user_email,
+            "profile": None,
+        }
 
-    return {"session_id": session_id, "email": user_email}
+        params = urllib.parse.urlencode({
+            "session_id": session_id,
+            "email": user_email,
+        })
+        return RedirectResponse(url=f"/?{params}", status_code=302)
+    except Exception as exc:
+        _logger.exception("OAuth callback failed")
+        params = urllib.parse.urlencode({"auth_error": str(exc)})
+        return RedirectResponse(url=f"/?{params}", status_code=302)
 
 
 # ---------------------------------------------------------------------------

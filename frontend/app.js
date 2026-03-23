@@ -22,28 +22,30 @@ async function startLogin() {
 
 async function handleCallback() {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state");
 
-    if (!code || !state) return false;
+    // Handle auth error from server-side callback
+    const authError = params.get("auth_error");
+    if (authError) {
+        alert("Authentication failed: " + authError);
+        window.history.replaceState({}, document.title, "/");
+        return true;
+    }
 
-    try {
-        const res = await fetch(
-            `${API_BASE}/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`
-        );
-        const data = await res.json();
-        sessionId = data.session_id;
+    // Handle successful server-side callback redirect (session_id in URL)
+    const urlSessionId = params.get("session_id");
+    const urlEmail = params.get("email");
+    if (urlSessionId && urlEmail) {
+        sessionId = urlSessionId;
         localStorage.setItem("session_id", sessionId);
-        localStorage.setItem("user_email", data.email);
+        localStorage.setItem("user_email", urlEmail);
 
         // Clean URL
         window.history.replaceState({}, document.title, "/");
-        showLoggedInState(data.email);
+        showLoggedInState(urlEmail);
         return true;
-    } catch (err) {
-        console.error("Auth callback failed:", err);
-        return false;
     }
+
+    return false;
 }
 
 function showLoggedInState(email) {

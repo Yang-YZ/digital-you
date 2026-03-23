@@ -96,7 +96,7 @@ cp .env.example .env
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project and enable the **Gmail API**
 3. Create **OAuth 2.0 Client ID** credentials (Web application)
-4. Add `http://localhost:8000` as an authorized redirect URI
+4. Add `http://localhost:8000/auth/callback` as an authorized redirect URI
 5. Copy the Client ID and Client Secret to your `.env` file
 
 ### 4. Run

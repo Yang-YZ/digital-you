@@ -88,12 +88,11 @@ Expected response (a Google OAuth URL):
 1. Copy the `auth_url` value and open it in your browser.
 2. Sign in with your Google account and grant access.
 3. Google redirects you to `http://localhost:8000/auth/callback?code=...&state=...`.
-4. The browser page shows JSON with your `session_id` and `email`. **Copy the
-   `session_id`** — you'll need it for every subsequent request.
-
-> **Tip:** If the redirect page shows JSON directly, just grab `session_id`
-> from it. If the frontend handles the redirect, check the URL bar or
-> `localStorage` in the browser console for `session_id`.
+4. The server exchanges the code and redirects your browser to
+   `http://localhost:8000/?session_id=...&email=...`.
+5. The frontend stores the session. Grab the `session_id` from the URL bar
+   (before the page cleans it) or from the browser console:
+   `localStorage.getItem("session_id")`.
 
 Save it in your terminal for convenience:
 
@@ -247,6 +246,6 @@ pytest tests/ -v
 | `connection refused` on curl | Make sure the server is running (`python -m backend.main`) |
 | `{"detail":"Not authenticated"}` | Your session expired or `SESSION_ID` is wrong — redo step 4 |
 | `{"detail":"Profile not built yet"}` | Run step 5 first to build your profile |
-| OAuth redirect fails | Ensure `http://localhost:8000` is in your Google Cloud authorized redirect URIs |
+| OAuth redirect fails | Ensure `http://localhost:8000/auth/callback` is in your Google Cloud authorized redirect URIs |
 | OpenAI errors / empty responses | Check that `OPENAI_API_KEY` in `.env` is valid and has credits |
 | `ModuleNotFoundError` | Make sure you activated the venv and ran `pip install -r requirements.txt` |

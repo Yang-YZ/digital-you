@@ -77,6 +77,43 @@ class TestAuthentication:
         assert response.status_code == 500
         assert "GOOGLE_CLIENT_SECRET" in response.json()["detail"]
 
+    def test_callback_redirects_to_frontend(self, client, monkeypatch):
+        """After exchanging the code, /auth/callback should redirect to /."""
+        fake_creds = type("Creds", (), {
+            "token": "t", "refresh_token": "rt",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "client_id": "cid", "client_secret": "cs", "scopes": [],
+        })()
+        monkeypatch.setattr(
+            "backend.main.exchange_code_for_credentials", lambda code: fake_creds,
+        )
+        monkeypatch.setattr(
+            "backend.main.get_user_email", lambda creds: "user@example.com",
+        )
+        response = client.get(
+            "/auth/callback?code=test-code&state=test-state",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        location = response.headers["location"]
+        assert location.startswith("/?")
+        assert "session_id=test-state" in location
+        assert "email=user%40example.com" in location
+
+    def test_callback_redirects_with_error_on_failure(self, client, monkeypatch):
+        """If the code exchange fails, redirect with an error param."""
+        monkeypatch.setattr(
+            "backend.main.exchange_code_for_credentials",
+            lambda code: (_ for _ in ()).throw(RuntimeError("token exchange failed")),
+        )
+        response = client.get(
+            "/auth/callback?code=bad-code&state=test-state",
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        location = response.headers["location"]
+        assert "auth_error=" in location
+
 
 class TestProfile:
     def test_get_profile_without_session(self, client):
