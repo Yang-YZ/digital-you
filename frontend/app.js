@@ -12,10 +12,13 @@ async function startLogin() {
     try {
         const res = await fetch(`${API_BASE}/auth/login`);
         const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.detail || "Login failed");
+        }
         // Open Google OAuth in the same window
         window.location.href = data.auth_url;
     } catch (err) {
-        alert("Failed to start login. Please check that the server is running.");
+        alert("Failed to start login: " + err.message);
         console.error(err);
     }
 }
