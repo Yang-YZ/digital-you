@@ -1,0 +1,16 @@
+# venv
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# env
+.env
+
+# data (contains generated persona)
+data/me.md
+
+# editor
+.vscode/
+.idea/
+.DS_Store
