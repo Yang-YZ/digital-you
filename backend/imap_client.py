@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import email
 import imaplib
+import logging
 import re
 from dataclasses import dataclass
 from email.header import decode_header, make_header
@@ -15,6 +16,8 @@ from email.message import Message
 from typing import Iterable
 
 from bs4 import BeautifulSoup
+
+logger = logging.getLogger("digital_you.imap")
 
 
 @dataclass
@@ -110,25 +113,37 @@ def fetch_emails(
     Returns a list of EmailRecord objects.
     """
     records: list[EmailRecord] = []
+    logger.info("Connecting to IMAP %s:%s as %s", host, port, username)
     with imaplib.IMAP4_SSL(host, port) as imap:
         imap.login(username, password)
+        logger.info("IMAP login OK")
         for raw_mailbox in mailboxes:
             mailbox = raw_mailbox.strip()
             if not mailbox:
                 continue
             try:
                 status, _ = imap.select(f'"{mailbox}"', readonly=True)
-            except imaplib.IMAP4.error:
+            except imaplib.IMAP4.error as exc:
+                logger.warning("Cannot select mailbox %r: %s", mailbox, exc)
                 continue
             if status != "OK":
+                logger.warning("Mailbox %r select returned status %s", mailbox, status)
                 continue
 
             status, data = imap.uid("search", None, "ALL")
             if status != "OK" or not data or not data[0]:
+                logger.info("Mailbox %r is empty or search failed", mailbox)
                 continue
             uids = data[0].split()
+            total = len(uids)
             uids = uids[-per_mailbox_limit:]
+            logger.info(
+                "Mailbox %r: %d total, fetching most recent %d",
+                mailbox, total, len(uids),
+            )
 
+            mailbox_count = 0
+            log_preview = 10
             for uid in uids:
                 status, msg_data = imap.uid("fetch", uid, "(RFC822)")
                 if status != "OK" or not msg_data or not msg_data[0]:
@@ -137,19 +152,32 @@ def fetch_emails(
                 if not isinstance(raw, (bytes, bytearray)):
                     continue
                 msg = email.message_from_bytes(raw)
+                subject = _decode(msg.get("Subject"))
+                sender = _decode(msg.get("From"))
+                date = _decode(msg.get("Date"))
+                if mailbox_count < log_preview:
+                    logger.info(
+                        "  [%s] %s | %s | %s",
+                        mailbox, date[:25], (sender or "")[:40], (subject or "(no subject)")[:80],
+                    )
+                elif mailbox_count == log_preview:
+                    logger.info("  [%s] ... (further messages omitted from log)", mailbox)
                 records.append(
                     EmailRecord(
                         mailbox=mailbox,
                         uid=uid.decode(),
-                        date=_decode(msg.get("Date")),
-                        sender=_decode(msg.get("From")),
+                        date=date,
+                        sender=sender,
                         to=_decode(msg.get("To")),
-                        subject=_decode(msg.get("Subject")),
+                        subject=subject,
                         body=_extract_body(msg),
                     )
                 )
+                mailbox_count += 1
+            logger.info("Mailbox %r: fetched %d messages", mailbox, mailbox_count)
         try:
             imap.logout()
         except Exception:
             pass
+    logger.info("IMAP fetch complete: %d total messages", len(records))
     return records

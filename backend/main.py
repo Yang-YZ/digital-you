@@ -1,6 +1,7 @@
 """FastAPI application entrypoint for digital-you."""
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -8,7 +9,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -17,6 +18,18 @@ from .imap_client import fetch_emails
 from .persona import generate_persona
 
 load_dotenv()
+
+# Configure our app loggers explicitly. uvicorn installs its own root
+# handlers before our app loads, so logging.basicConfig() is a no-op.
+# We attach our own StreamHandler so digital_you.* loggers always print.
+_app_logger = logging.getLogger("digital_you")
+if not _app_logger.handlers:
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+    _app_logger.addHandler(_h)
+_app_logger.setLevel(logging.INFO)
+_app_logger.propagate = False
+logger = _app_logger
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -79,6 +92,11 @@ class ChatResponse(BaseModel):
 @app.get("/api/health")
 def health() -> dict:
     return {"ok": True, "persona_exists": PERSONA_PATH.exists()}
+
+
+@app.get("/favicon.ico")
+def favicon() -> Response:
+    return Response(status_code=204)
 
 
 @app.get("/api/persona", response_class=PlainTextResponse)
