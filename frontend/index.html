@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>digital-you</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>digital-you</h1>
+    <p class="tagline">Read your inbox &rarr; build a <code>me.md</code> &rarr; chat as you.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Generate <code>me.md</code></h2>
+      <p class="hint">
+        Use an <strong>app password</strong>, not your real one. Credentials are sent to your local
+        backend only and not stored.
+      </p>
+      <form id="gen-form">
+        <div class="row">
+          <label>IMAP host
+            <input name="imap_host" value="imap.gmail.com" required />
+          </label>
+          <label>Port
+            <input name="imap_port" type="number" value="993" required />
+          </label>
+        </div>
+        <div class="row">
+          <label>Username (email)
+            <input name="username" type="email" required />
+          </label>
+          <label>App password
+            <input name="password" type="password" required />
+          </label>
+        </div>
+        <div class="row">
+          <label>Mailboxes (comma-separated)
+            <input name="mailboxes" value="INBOX,[Gmail]/Sent Mail" required />
+          </label>
+          <label>Per-mailbox limit
+            <input name="per_mailbox_limit" type="number" value="50" min="1" max="500" required />
+          </label>
+        </div>
+        <div class="row">
+          <label>Model
+            <input name="model" value="gpt-4o-mini" required />
+          </label>
+          <label>Optional hint (your name, role, etc.)
+            <input name="user_hint" placeholder="e.g. Yang, software engineer" />
+          </label>
+        </div>
+        <button type="submit" id="gen-btn">Generate me.md</button>
+        <span id="gen-status" class="status"></span>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>2. Your <code>me.md</code></h2>
+      <button id="reload-persona" type="button">Reload from server</button>
+      <pre id="persona-view">No persona generated yet.</pre>
+    </section>
+
+    <section class="card">
+      <h2>3. Chat as you</h2>
+      <p class="hint">Messages here will be answered in your voice, using <code>me.md</code>.</p>
+      <div id="chat-log" class="chat-log"></div>
+      <form id="chat-form">
+        <input id="chat-input" placeholder="Say something to your digital twin..." autocomplete="off" />
+        <button type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
